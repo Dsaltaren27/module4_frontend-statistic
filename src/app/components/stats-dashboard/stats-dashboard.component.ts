@@ -29,8 +29,26 @@ export class StatsDashboardComponent implements OnInit, OnDestroy {
     this.destroyChart();
   }
 
+
+private extractShortCode(input: string): string {
+    const cleanedInput = input.trim();
+    if (!cleanedInput) return '';
+
+    // If the user pasted a complete URL, extract the last non-empty segment
+    if (cleanedInput.includes('/')) {
+      const segments = cleanedInput.split('/');
+      return segments.pop() || segments.pop() || '';
+    }
+
+    return cleanedInput;
+  }
+
   async fetchStatistics(): Promise<void> {
-    if (!this.searchCode.trim()) return;
+    const code = this.extractShortCode(this.searchCode);
+    if (!code) {
+        this.errorMessage = 'Por favor, ingrese un código válido o una URL completa.';
+      return;
+    }
 
     this.isLoading = true;
     this.errorMessage = null;
@@ -38,7 +56,7 @@ export class StatsDashboardComponent implements OnInit, OnDestroy {
     this.destroyChart();
 
     try {
-      this.statsData = await this.statsService.getStatsByCode(this.searchCode);
+      this.statsData = await this.statsService.getStatsByCode(code);
       setTimeout(() => this.renderChart(), 60);
     } catch (error: any) {
       if (error.response && error.response.status === 404) {
