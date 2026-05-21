@@ -1,0 +1,106 @@
+<div style="min-height: 100vh; background-color: #f8fafc; padding: 32px; font-family: sans-serif; color: #334155;">
+  <header style="max-width: 1200px; margin: 0 auto 32px auto; border-b: 1px solid #e2e8f0; padding-bottom: 16px;">
+    <h1 style="font-size: 28px; font-weight: 800; color: #0f172a; margin: 0;">
+      Telemetry<span style="color: #6366f1;">Dashboard</span>
+    </h1>
+    <p style="color: #64748b; font-size: 14px; margin: 4px 0 0 0;">Módulo 4 - Analíticas del Acortador (AWS & S3)</p>
+  </header>
+
+  <div style="max-width: 1200px; margin: 0 auto 24px auto; background-color: white; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <div style="display: flex; gap: 12px;">
+      <input
+        type="text"
+        [(ngModel)]="searchCode"
+        placeholder="Introduce el shortcode a auditar (ej. ec61ff)"
+        style="flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: monospace; font-size: 14px;"
+      />
+      <button
+        (click)="fetchStatistics()"
+        style="background-color: #6366f1; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;"
+      >
+        Consultar Métricas
+      </button>
+    </div>
+  </div>
+
+  @if (isLoading) {
+    <div style="text-align: center; padding: 64px; max-width: 1200px; margin: 0 auto; background: white; border-radius: 12px; border: 1px solid #e2e8f0;">
+      <p style="color: #64748b; font-weight: 500; margin: 0;">Consultando registros en AWS DynamoDB...</p>
+    </div>
+  }
+
+  @if (errorMessage) {
+    <div style="max-width: 1200px; margin: 0 auto 24px auto; background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; border-radius: 0 8px 8px 0;">
+      <span style="color: #991b1b; font-weight: 600; font-size: 14px;">{{ errorMessage }}</span>
+    </div>
+  }
+
+  @if (statsData && !isLoading) {
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+        <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0;">
+          <span style="font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Short Code</span>
+          <h3 style="font-size: 24px; font-weight: 700; color: #6366f1; margin: 4px 0 0 0;">{{ statsData.shortCode }}</h3>
+          <p style="font-size: 12px; color: #94a3b8; margin: 8px 0 0 0;">Creado: {{ statsData.createdAt | date:'shortDate' }}</p>
+        </div>
+
+        <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0;">
+          <span style="font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Total Clics</span>
+          <h3 style="font-size: 36px; font-weight: 900; color: #0f172a; margin: 4px 0 0 0;">{{ statsData.totalClicks }}</h3>
+          <p style="font-size: 12px; color: #10b981; font-weight: 500; margin: 8px 0 0 0;">✓ Sincronizado</p>
+        </div>
+
+        <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0;">
+          <span style="font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase;">URL Destino</span>
+          <p style="font-size: 14px; font-weight: 600; color: #334155; margin: 8px 0 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" [title]="statsData.longUrl">
+            {{ statsData.longUrl }}
+          </p>
+          <a [href]="statsData.longUrl" target="_blank" style="color: #6366f1; font-size: 12px; display: inline-block; margin-top: 8px; text-decoration: underline;">
+            Visitar enlace original →
+          </a>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+        <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0; min-height: 280px;">
+          <h3 style="font-size: 14px; font-weight: 700; color: #475569; text-align: center; margin-bottom: 16px;">Tráfico por Día</h3>
+          <div style="height: 220px; position: relative;">
+            <canvas #trafficChart></canvas>
+          </div>
+        </div>
+
+        <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0;">
+          <h3 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0;">Auditoría de Clientes (IPs)</h3>
+          <div style="overflow-y: auto; max-height: 220px;">
+            <table style="width: 100%; text-align: left; border-collapse: collapse; font-size: 14px;">
+              <thead>
+                <tr style="background: #f8fafc; color: #64748b;">
+                  <th style="padding: 10px;">Fecha</th>
+                  <th style="padding: 10px;">IP</th>
+                  <th style="padding: 10px;">User Agent</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (click of statsData.clicksDetail; track $index) {
+                  <tr style="border-top: 1px solid #f1f5f9;">
+                    <td style="padding: 10px; color: #64748b;">{{ click.timestamp | date:'short' }}</td>
+                    <td style="padding: 10px; font-family: monospace; font-weight: 600;">{{ click.ip }}</td>
+                    <td style="padding: 10px; color: #475569; max-w: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" [title]="click.userAgent">
+                      {{ click.userAgent }}
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="3" style="padding: 24px; text-align: center; color: #94a3b8;">No hay visitas registradas para este código.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  }
+</div>
