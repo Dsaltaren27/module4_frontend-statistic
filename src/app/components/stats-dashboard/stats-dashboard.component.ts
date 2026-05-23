@@ -12,32 +12,30 @@ import Chart from 'chart.js/auto';
 })
 export class StatsDashboardComponent implements OnInit, OnDestroy {
   @ViewChild('trafficChart') trafficChartCanvas!: ElementRef<HTMLCanvasElement>;
-  
-  searchCode: string = 'ec61ff'; 
+
+  searchCode: string = '';
   statsData: any = null;
   isLoading: boolean = false;
   errorMessage: string | null = null;
-  chartInstance: any = null; 
+  chartInstance: any = null;
 
   constructor(private statsService: StatsService) {}
 
   ngOnInit(): void {
-    this.fetchStatistics();
   }
 
   ngOnDestroy(): void {
     this.destroyChart();
   }
 
-
-private extractShortCode(input: string): string {
+  private extractShortCode(input: string): string {
     const cleanedInput = input.trim();
     if (!cleanedInput) return '';
 
-    // If the user pasted a complete URL, extract the last non-empty segment
+    // Si el usuario pegó una URL completa, extrae el último segmento
     if (cleanedInput.includes('/')) {
-      const segments = cleanedInput.split('/');
-      return segments.pop() || segments.pop() || '';
+      const segments = cleanedInput.split('/').filter(s => s.length > 0);
+      return segments[segments.length - 1] || '';
     }
 
     return cleanedInput;
@@ -46,7 +44,7 @@ private extractShortCode(input: string): string {
   async fetchStatistics(): Promise<void> {
     const code = this.extractShortCode(this.searchCode);
     if (!code) {
-        this.errorMessage = 'Por favor, ingrese un código válido o una URL completa.';
+      this.errorMessage = 'Por favor, ingrese un código válido o una URL completa.';
       return;
     }
 
@@ -60,7 +58,7 @@ private extractShortCode(input: string): string {
       setTimeout(() => this.renderChart(), 60);
     } catch (error: any) {
       if (error.response && error.response.status === 404) {
-        this.errorMessage = 'El código corto consultado no existe en la base de datos de DynamoDB.';
+        this.errorMessage = 'El código corto consultado no existe en la base de datos.';
       } else {
         this.errorMessage = 'Error de comunicación. No se pudo conectar con el servidor de AWS.';
       }
@@ -70,7 +68,7 @@ private extractShortCode(input: string): string {
   }
 
   renderChart(): void {
-    if (!this.trafficChartCanvas || !this.statsData) return;
+    if (!this.trafficChartCanvas || !this.statsData?.clicksByDay) return;
 
     const days = Object.keys(this.statsData.clicksByDay);
     const clickCounts = Object.values(this.statsData.clicksByDay);
@@ -84,12 +82,12 @@ private extractShortCode(input: string): string {
         labels: days,
         datasets: [{
           label: 'Visitas Diarias',
-          data: clickCounts,
-          backgroundColor: 'rgba(99, 102, 241, 0.2)', 
-          borderColor: '#6366f1',                      
+          data: clickCounts as number[],
+          backgroundColor: 'rgba(99, 102, 241, 0.2)',
+          borderColor: '#6366f1',
           borderWidth: 2,
           borderRadius: 6,
-          hoverBackgroundColor: 'rgba(139, 92, 246, 0.4)', 
+          hoverBackgroundColor: 'rgba(139, 92, 246, 0.4)',
           hoverBorderColor: '#8b5cf6',
         }]
       },

@@ -1,42 +1,49 @@
-# See http://help.github.com/ignore-files/ for more about ignoring files.
 
-# Compiled output
 /dist
 /tmp
 /out-tsc
 /bazel-out
-
-# Node
 /node_modules
+/.angular/cache
+
+# Logs de error de paquetes
 npm-debug.log
 yarn-error.log
+yarn-clean.log
+package-lock.json.log
 
-# IDEs and editors
-.idea/
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
 
-# Visual Studio Code
+# Ignora la carpeta donde se descargan los proveedores (el .exe de 685MB)
+**/terraform/.terraform/
+.terraform/
+.terraform/*
+
+# Ignora los estados locales de Terraform (contienen credenciales y rutas)
+*.tfstate
+*.tfstate.backup
+*.tfstate.lock.info
+terraform.tfstate
+terraform.tfstate.backup
+
+# Ignora archivos de configuración de inicialización y empaquetados
+.terraform.lock.hcl
+*.zip
+*.exe
+
+
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 .history/*
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# Miscellaneous
-/.angular/cache
-.sass-cache/
-/connect.lock
-/coverage
-/libpeerconnection.log
-testem.log
-/typings
 
-# System files
 .DS_Store
 Thumbs.db
